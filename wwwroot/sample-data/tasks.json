@@ -1,0 +1,20 @@
+[
+  {
+    "Title": "Belajar Blazor",
+    "Category": "Kuliah",
+    "Deadline": "2025-07-15T00:00:00",
+    "IsCompleted": false
+  },
+  {
+    "Title": "Kerjakan Proyek Laravel",
+    "Category": "Kerja",
+    "Deadline": "2025-07-20T00:00:00",
+    "IsCompleted": true
+  },
+  {
+    "Title": "Submit laporan",
+    "Category": "Organisasi",
+    "Deadline": "2025-07-13T00:00:00",
+    "IsCompleted": false
+  }
+]

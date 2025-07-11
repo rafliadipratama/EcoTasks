@@ -1,0 +1,63 @@
+﻿@page "/fetchdata"
+@inject HttpClient Http
+
+<PageTitle>Task List</PageTitle>
+
+<h1>Daftar Tugas</h1>
+<p>Halaman ini mengambil data tugas dari server.</p>
+
+@if (tasks == null)
+{
+    <p><em>Memuat data...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Judul</th>
+                <th>Kategori</th>
+                <th>Deadline</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var task in tasks)
+            {
+                <tr>
+                    <td>@task.Title</td>
+                    <td>@task.Category</td>
+                    <td>@task.Deadline.ToString("dd MMM yyyy", new System.Globalization.CultureInfo("id-ID"))</td>
+                    <td>
+                        @if (task.IsCompleted)
+                        {
+                            <span class="text-success">Selesai</span>
+                        }
+                        else
+                        {
+                            <span class="text-danger">Belum</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<TaskItem>? tasks;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Ganti dengan URL API jika tersedia
+        tasks = await Http.GetFromJsonAsync<List<TaskItem>>("sample-data/tasks.json");
+    }
+
+    public class TaskItem
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public DateTime Deadline { get; set; }
+        public bool IsCompleted { get; set; }
+    }
+}

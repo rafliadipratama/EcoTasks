@@ -1,0 +1,154 @@
+@page "/todo"
+@inject IJSRuntime JS
+
+<h3>EcoTasks - Task Manager</h3>
+
+<div class="mb-3">
+    <input @bind="newTaskText" class="form-control mb-2" placeholder="Masukkan tugas..." />
+
+    <input type="date" class="form-control mb-2" @bind="newTaskDeadline" />
+
+    <select class="form-select mb-2" @bind="newTaskCategory">
+        <option value="">Pilih Kategori</option>
+        <option value="Pekerjaan">Pekerjaan</option>
+        <option value="Pribadi">Pribadi</option>
+        <option value="Penting">Penting</option>
+    </select>
+
+    <button class="btn btn-primary" @onclick="AddTask">Tambah</button>
+</div>
+
+<div class="mb-3">
+    <label class="form-label">Filter:</label>
+    <select class="form-select w-auto d-inline-block ms-2" @bind="selectedFilter">
+        <option value="All">Semua</option>
+        <option value="Done">Selesai</option>
+        <option value="NotDone">Belum Selesai</option>
+    </select>
+</div>
+
+<ul class="list-group">
+    @foreach (var task in FilteredTasks)
+    {
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="d-flex align-items-start flex-column">
+                <div class="d-flex align-items-center">
+                    <input type="checkbox" class="form-check-input me-2"
+                           checked="@task.IsDone"
+                           @onchange="async e => await OnCheckboxChanged(task, e)" />
+
+                    @if (task.IsEditing)
+                    {
+                        <input class="form-control me-2" style="width: 250px;"
+                               @bind="task.Text"
+                               @onkeydown="@((KeyboardEventArgs e) => OnEditKeyDown(task, e))" />
+                    }
+                    else
+                    {
+                        <span style="@(task.IsDone ? "text-decoration: line-through;" : "")">@task.Text</span>
+                    }
+                </div>
+
+                <small class="text-muted">
+                    📅 @task.Deadline?.ToString("dd MMM yyyy") | 🗂️ @task.Category
+                </small>
+            </div>
+
+            <div>
+                @if (!task.IsEditing)
+                {
+                    <button class="btn btn-sm btn-secondary me-1" @onclick="() => EditTask(task)">✏️</button>
+                }
+                <button class="btn btn-sm btn-danger" @onclick="() => RemoveTask(task)">❌</button>
+            </div>
+        </li>
+    }
+</ul>
+
+@code {
+    private string newTaskText = string.Empty;
+    private string newTaskCategory = "";
+    private DateTime? newTaskDeadline = null;
+    private string selectedFilter = "All";
+
+    private List<TodoItem> tasks = new();
+
+    private IEnumerable<TodoItem> FilteredTasks =>
+        selectedFilter switch
+        {
+            "Done" => tasks.Where(t => t.IsDone),
+            "NotDone" => tasks.Where(t => !t.IsDone),
+            _ => tasks
+        };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var stored = await JS.InvokeAsync<string>("localStorage.getItem", "tasks");
+        if (!string.IsNullOrEmpty(stored))
+        {
+            tasks = System.Text.Json.JsonSerializer.Deserialize<List<TodoItem>>(stored) ?? new();
+        }
+    }
+
+    async Task AddTask()
+    {
+        if (!string.IsNullOrWhiteSpace(newTaskText))
+        {
+            tasks.Add(new TodoItem
+            {
+                Text = newTaskText,
+                Category = newTaskCategory,
+                Deadline = newTaskDeadline
+            });
+
+            newTaskText = string.Empty;
+            newTaskCategory = "";
+            newTaskDeadline = null;
+
+            await SaveTasks();
+        }
+    }
+
+    async Task RemoveTask(TodoItem task)
+    {
+        tasks.Remove(task);
+        await SaveTasks();
+    }
+
+    Task EditTask(TodoItem task)
+    {
+        task.IsEditing = true;
+        return Task.CompletedTask;
+    }
+
+    async Task OnEditKeyDown(TodoItem task, KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            task.IsEditing = false;
+            await SaveTasks();
+        }
+    }
+
+    async Task OnCheckboxChanged(TodoItem task, ChangeEventArgs e)
+    {
+        task.IsDone = (bool)e.Value!;
+        await SaveTasks();
+    }
+
+    async Task SaveTasks()
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(tasks);
+        await JS.InvokeVoidAsync("localStorage.setItem", "tasks", json);
+        StateHasChanged();
+    }
+
+    public class TodoItem
+    {
+        public string Text { get; set; } = "";
+        public bool IsDone { get; set; } = false;
+        public bool IsEditing { get; set; } = false;
+        public string Category { get; set; } = "";
+        public DateTime? Deadline { get; set; }
+    }
+}

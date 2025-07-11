@@ -1,0 +1,35 @@
+﻿@page "/counter"
+
+<h3>Statistik Tugas</h3>
+
+<p><strong>Total Tugas:</strong> @TotalTasks</p>
+<p><strong>Tugas Selesai:</strong> @CompletedTasks</p>
+<p><strong>Tugas Belum Selesai:</strong> @RemainingTasks</p>
+
+<ul>
+    @foreach (var task in tasks)
+    {
+        <li>
+            <input type="checkbox" @bind="task.IsDone" /> @task.Text
+        </li>
+    }
+</ul>
+
+@code {
+    private List<TodoItem> tasks = new()
+    {
+        new TodoItem { Text = "Belajar Blazor", IsDone = true },
+        new TodoItem { Text = "Bikin fitur deadline", IsDone = false },
+        new TodoItem { Text = "Testing aplikasi", IsDone = false }
+    };
+
+    private int TotalTasks => tasks.Count;
+    private int CompletedTasks => tasks.Count(t => t.IsDone);
+    private int RemainingTasks => tasks.Count(t => !t.IsDone);
+
+    public class TodoItem
+    {
+        public string Text { get; set; } = "";
+        public bool IsDone { get; set; } = false;
+    }
+}
